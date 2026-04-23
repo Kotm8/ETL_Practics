@@ -196,3 +196,11 @@ if __name__ == "__main__":
     check_table()
     make_view()
     show_view()
+    with sqlite3.connect(DB_PATH) as conn:
+        df_orders = pd.read_sql("SELECT * FROM dwh_orders;", conn)
+
+        print(df_orders)
+    
+        df_state = pd.read_sql("SELECT * FROM etl_state;", conn)
+
+        print(df_state)
