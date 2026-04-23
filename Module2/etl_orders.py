@@ -19,6 +19,7 @@ def create_tables():
             order_ts TEXT,
             status TEXT,
             amount REAL,
+            is_deleted BOOL,
             updated_at TEXT,
             load_dttm TEXT
         );
@@ -28,6 +29,7 @@ def create_tables():
             order_ts TEXT NOT NULL,
             status TEXT NOT NULL,
             amount REAL NOT NULL,
+            is_deleted BOOL,
             updated_at TEXT NOT NULL,
             load_dttm TEXT NOT NULL
         );
@@ -78,6 +80,7 @@ def extract_from_csv(data_url) -> pd.DataFrame:
     data["amount"] = pd.to_numeric(data["amount"], errors="coerce")
     data["order_ts"] = pd.to_datetime(data["order_ts"], errors="coerce")
     data["updated_at"] = pd.to_datetime(data["updated_at"], errors="coerce")
+    data["is_deleted"] = data["is_deleted"].astype(bool)
 
     data = data.dropna(subset=["order_id", "updated_at", "amount"])
 
@@ -93,6 +96,7 @@ def make_view():
                     ROUND(SUM(amount), 2) AS total_revenue
                     FROM dwh_orders
                     WHERE status IN ('paid', 'new', 'shipped')
+                        AND is_deleted = 0
                     GROUP BY date(order_ts)
                     ORDER BY order_day;
                     """)
@@ -114,10 +118,10 @@ def run_full_load(data: pd.DataFrame):
 
         conn.execute("""
             INSERT INTO dwh_orders (
-                order_id, customer_id, order_ts, status, amount, updated_at, load_dttm
+                order_id, customer_id, order_ts, status, amount, is_deleted, updated_at, load_dttm
             )
             SELECT
-                order_id, customer_id, order_ts, status, amount, updated_at, load_dttm
+                order_id, customer_id, order_ts, status, amount, is_deleted, updated_at, load_dttm
             FROM stg_orders
                     """)
 
@@ -130,7 +134,6 @@ def run_full_load(data: pd.DataFrame):
             SET last_success_ts = excluded.last_success_ts
             """, (PIPELINE_NAME, str(max_updated_at)))
         conn.commit()
-
 
 def run_incremental_load(data: pd.DataFrame):
     with get_conn() as conn:
@@ -158,10 +161,10 @@ def run_incremental_load(data: pd.DataFrame):
 
         conn.execute("""
                     INSERT INTO dwh_orders (
-                        order_id, customer_id, order_ts, status, amount, updated_at, load_dttm
+                        order_id, customer_id, order_ts, status, amount, is_deleted, updated_at, load_dttm
                     )
                     SELECT
-                        order_id, customer_id, order_ts, status, amount, updated_at, load_dttm
+                        order_id, customer_id, order_ts, status, amount, is_deleted, updated_at, load_dttm
                     FROM stg_orders
                     WHERE true
                     ON CONFLICT(order_id) DO UPDATE SET
@@ -169,6 +172,7 @@ def run_incremental_load(data: pd.DataFrame):
                         order_ts = excluded.order_ts,
                         status = excluded.status,
                         amount = excluded.amount,
+                        is_deleted = excluded.is_deleted,
                         updated_at = excluded.updated_at,
                         load_dttm = excluded.load_dttm;
                     """)
