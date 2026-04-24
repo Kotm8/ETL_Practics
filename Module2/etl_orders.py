@@ -190,8 +190,8 @@ def run_incremental_load(data: pd.DataFrame):
 if __name__ == "__main__":
     create_tables()
     data = extract_from_csv(DATA_PATH)
-    #run_full_load(data)
-    run_incremental_load(data)
+    run_full_load(data)
+    #run_incremental_load(data)
 
     check_table()
     make_view()
