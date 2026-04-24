@@ -8,8 +8,7 @@ from datetime import datetime
 
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "etl.db"
-#DATA_PATH = BASE_DIR / "data" / "orders_source.csv"
-#PIPELINE_NAME = "orders_pipeline"
+
 BATCH_ID = 1
 load_dotenv()
 
