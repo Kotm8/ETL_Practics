@@ -1,13 +1,9 @@
 from app.core.minio_client import get_minio_client
-from app.services.extract import extract_from_csv
-from app.services.marts import generate_mart_daily, get_report
-from app.services.quality import run_quality_checks
-from app.services.quarantine import quarantine_invalid_rows
-from app.services.staging import (
-    staging_orders_clean,
-    staging_orders_dedup,
-    staging_orders_raw,
-)
+from app.services.extract_service import extractService
+from app.services.marts_service import martsService
+from app.services.quality_service import qualityService
+from app.services.quarantine_service import quarantineService
+from app.services.staging_service import stagingService
 
 
 LOAD_DATE = "2026-04-13"
@@ -23,24 +19,26 @@ def run_pipeline(load_date: str = LOAD_DATE):
     )
 
     try:
-        df = extract_from_csv(response)
+        df = extractService.extract_from_csv(response)
     finally:
         response.close()
         response.release_conn()
 
-    staging_orders_raw(df)
-    quarantine_invalid_rows(load_date)
+    stagingService.staging_orders_raw(df)
+    quarantineService.quarantine_invalid_rows(load_date)
 
-    staging_orders_clean()
-#full
-    staging_orders_dedup()
-    generate_mart_daily()
-#increm
-    #merge_orders_dedup()
-    #rebuild_mart_daily_last_7_days()
-    
-    run_quality_checks()
-    print(get_report())
+    stagingService.staging_orders_clean()
+
+    # full
+    stagingService.staging_orders_dedup()
+    martsService.generate_mart_daily()
+
+    # incremental
+    # stagingService.merge_orders_dedup()
+    # martsService.rebuild_mart_daily_last_7_days()
+
+    qualityService.run_quality_checks()
+    print(martsService.get_report())
 
 
 if __name__ == "__main__":
