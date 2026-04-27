@@ -1,0 +1,5 @@
+{
+  "include": ["airflow-project/dags", "airflow-project/scripts", "airflow-project/plugins", "orders"],
+  "extraPaths": ["./airflow-project/plugins", "./airflow-project/scripts", "."],
+  "reportMissingImports": true
+}
