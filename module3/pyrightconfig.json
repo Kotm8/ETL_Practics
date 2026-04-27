@@ -1,0 +1,5 @@
+{
+  "include": ["dags", "scripts", "plugins"],
+  "extraPaths": ["./plugins", "./scripts", "."],
+  "reportMissingImports": true
+}
