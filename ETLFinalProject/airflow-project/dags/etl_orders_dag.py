@@ -115,7 +115,7 @@ with DAG(
         bash_command='echo "ETL completed successfully"',
     )
 
-    extract_orders >> extract_users >> transform_task >> branch_task # type: ignore
+    [extract_orders, extract_users] >> transform_task >> branch_task # type: ignore
     branch_task >> full_reload_task >> join_task # type: ignore
     branch_task >> incremental_task >> join_task # type: ignore
     join_task >> qc_task >> notify_success # type: ignore

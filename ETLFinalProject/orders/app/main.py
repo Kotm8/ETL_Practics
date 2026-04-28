@@ -1,8 +1,18 @@
 from contextlib import asynccontextmanager
-from app.api.v1.router import router
+
 from fastapi import FastAPI
 
-app = FastAPI()
+from app.api.v1.router import router
+from app.core.minio_client import ensure_minio_ready
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    ensure_minio_ready()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 app.include_router(router, prefix="/api/v1")
 
 

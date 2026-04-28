@@ -120,7 +120,6 @@ def _clickhouse_order_ids(df: pd.DataFrame) -> list[int]:
 
 def _upsert_orders(
     cur: sqlite3.Cursor,
-    conn: sqlite3.Connection,
     df: pd.DataFrame,
     fail_after: int | None = None,
 ) -> None:
@@ -173,7 +172,6 @@ def _upsert_orders(
             ),
         )
         if fail_after is not None and i == fail_after:
-            conn.commit()
             raise RuntimeError(f"Simulated failure after {fail_after} rows")
 
 
@@ -182,9 +180,13 @@ def load(df: pd.DataFrame, db_path: Path | str, fail_after: int | None = None) -
     cur = conn.cursor()
 
     try:
+        conn.execute("BEGIN")
         _create_dwh_orders(cur)
-        _upsert_orders(cur, conn, df, fail_after=fail_after)
+        _upsert_orders(cur, df, fail_after=fail_after)
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
 
@@ -198,10 +200,14 @@ def full_reload(
     cur = conn.cursor()
 
     try:
+        conn.execute("BEGIN")
         _create_dwh_orders(cur)
         cur.execute("DELETE FROM dwh_orders")
-        _upsert_orders(cur, conn, df, fail_after=fail_after)
+        _upsert_orders(cur, df, fail_after=fail_after)
         conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
     finally:
         conn.close()
 

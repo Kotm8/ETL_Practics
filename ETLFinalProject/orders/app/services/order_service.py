@@ -1,3 +1,5 @@
+from fastapi import HTTPException, status
+
 from app.services.user_service import UserService
 from app.repositories.counters import CounterRepository
 from app.core.minio_client import get_minio_client
@@ -15,6 +17,11 @@ class OrderService:
         date = now.date()
 
         users_db = await UserService.get_users()
+        if len(users_db) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Cannot generate orders because no users exist",
+            )
         client = get_minio_client()
 
         counter = await CounterRepository.increment("order_id", order_amount)
@@ -89,7 +96,7 @@ class OrderService:
                     "order_ts": order_datetime.strftime("%Y-%m-%d %H:%M:%S"),
                     "revenue": round(random.uniform(100, 10000), 2),
                     "delivery_quality": random.randint(1, 5),
-                    "product_category": random.randint(1, 3),
+                    "product_category": 3,
                     "customer_satisfaction": random.randint(1, 5),
                 }
             )
