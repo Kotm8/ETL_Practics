@@ -23,6 +23,8 @@ archive.zip
 logs/
 warehouse/stage/
 Module3/warehouse/
+ETLFinalProject/airflow-project/logs/
+ETLFinalProject/airflow-project/warehouse/
 # vim temporary files
 *~
 .*.sw?
